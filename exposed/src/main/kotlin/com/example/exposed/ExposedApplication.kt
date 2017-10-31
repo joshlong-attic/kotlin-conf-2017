@@ -6,14 +6,17 @@ import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import java.net.URI
+import javax.annotation.PostConstruct
 import javax.sql.DataSource
 
 @SpringBootApplication
+//@EnableAspectJAutoProxy(proxyTargetClass = true)
 class ExposedApplication {
 
     @Bean
@@ -30,7 +33,7 @@ class ExposedApplication {
 @RequestMapping("/cities")
 class CityRestController(private val cr: CityRepository) {
 
-    // curl -Hcontent-type: application/json -d{"name":"Los Angeles"} http://localhost:8080/cities
+    // curl -H"content-type: application/json" -d'{"name":"Los Angeles"}' http://localhost:8080/cities
     @PostMapping
     fun write(@RequestBody city: City): ResponseEntity<Void> {
         val insert = cr.insert(City(name = city.name))
@@ -51,6 +54,7 @@ class CityRepository {
 
     private val cityTransform: (ResultRow) -> City = { City(it[Cities.id], it[Cities.name]) }
 
+    //  @PostConstruct
     fun begin() {
         SchemaUtils.create(Cities)
     }
@@ -69,12 +73,6 @@ object Cities : Table() {
     val name = varchar("name", 50) // Column<String>
 }
 
-
 fun main(args: Array<String>) {
     SpringApplication.run(ExposedApplication::class.java, *args)
 }
-
-
-
-
-
