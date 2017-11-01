@@ -1,2 +1,3 @@
 # kotlin-conf
-code for my Kotlin conf talk.
+
+## JDBC & REST (classic Spring)
