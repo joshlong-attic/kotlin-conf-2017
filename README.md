@@ -1,3 +1,2 @@
-# kotlin-conf
+# Kotlin Conference 
 
-## JDBC & REST (classic Spring)
