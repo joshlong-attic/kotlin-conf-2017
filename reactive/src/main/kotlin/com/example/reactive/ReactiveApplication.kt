@@ -1,6 +1,6 @@
-package com.example.reactivebasics
+package com.example.reactive
 
-import org.springframework.beans.factory.InitializingBean
+import org.reactivestreams.Publisher
 import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.builder.SpringApplicationBuilder
@@ -13,47 +13,53 @@ import org.springframework.data.mongodb.repository.ReactiveMongoRepository
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.body
 import org.springframework.web.reactive.function.server.router
+import reactor.core.publisher.Flux
 import reactor.core.publisher.toFlux
 
 @SpringBootApplication
-class ReactiveBasicsApplication
-
+class ReactiveApplication
 
 fun main(args: Array<String>) {
 
     SpringApplicationBuilder()
-            .sources(ReactiveBasicsApplication::class.java)
+            .sources(ReactiveApplication::class.java)
             .initializers(beans {
                 bean {
-                    InitializingBean {
-                        val customerRepository = ref<CustomerRepository>()
-                        customerRepository
+                    ApplicationRunner {
+
+                        val customerService = ref<CustomerRepository>()
+
+                        val customers: Flux<Customer> = arrayOf("A", "B", "C", "D")
+                                .toFlux()
+                                .flatMap { customerService.save(Customer(name = it)) }
+
+                        customerService
                                 .deleteAll()
-                                .thenMany(arrayOf("Tammie", "Hadi", "Madhura", "Cornelia", "Andrey").toFlux().flatMap { customerRepository.save(Customer(name = it)) })
-                                .thenMany(customerRepository.findAll())
+                                .thenMany(customers)
+                                .thenMany(customerService.findAll())
                                 .subscribe { println(it) }
                     }
                 }
                 bean {
-                    val customerRepository = ref<CustomerRepository>()
                     router {
-                        GET("/customers") { ServerResponse.ok().body<Customer>(customerRepository.findAll()) }
-                        GET("/customers/{id}") { ServerResponse.ok().body<Customer>(customerRepository.findById(it.pathVariable("id"))) }
+                        val customerRepository = ref<CustomerRepository>()
+                        GET("/customers/{id}") { ServerResponse.ok().body(customerRepository.findById(it.pathVariable("id"))) }
+                        GET("/customers") { ServerResponse.ok().body(customerRepository.findAll()) }
                     }
                 }
                 bean {
                     gateway {
                         route {
-                            id("blog")
-                            predicate(path("/blog"))
-                            uri("http://spring.io:80/blog")
+                            id ("blog-atom")
+                            predicate(path("/atom") or path("/blog.atom"))
+                            uri("http://spring.io:80/blog.atom")
                         }
                     }
                 }
+
             })
             .run(*args)
 }
-
 
 interface CustomerRepository : ReactiveMongoRepository<Customer, String>
 
