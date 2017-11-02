@@ -37,8 +37,9 @@ class DemoApplication {
 }
 
 fun main(args: Array<String>) {
-    SpringApplicationBuilder().
-            sources(DemoApplication::class.java)
+
+    SpringApplicationBuilder()
+            .sources(DemoApplication::class.java)
             .initializers(beans {
                 bean {
                     val customerService = ref<CustomerService>()
