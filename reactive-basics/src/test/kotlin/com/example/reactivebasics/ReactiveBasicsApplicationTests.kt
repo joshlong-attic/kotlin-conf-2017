@@ -1,4 +1,4 @@
-package com.example.reactivekotlin
+package com.example.reactivebasics
 
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -7,7 +7,7 @@ import org.springframework.test.context.junit4.SpringRunner
 
 @RunWith(SpringRunner::class)
 @SpringBootTest
-class ReactiveKotlinApplicationTests {
+class ReactiveBasicsApplicationTests {
 
 	@Test
 	fun contextLoads() {
