@@ -25,10 +25,11 @@ import javax.sql.DataSource
 class DemoApplication {
 
     @Bean
+    @Profile("exposed")
     fun platformTransactionManager(ds: DataSource) = SpringTransactionManager(ds)
 
     @Bean
-    fun init(customerService: ExposedCustomerService) = ApplicationRunner {
+    fun init(customerService: CustomerService) = ApplicationRunner {
         customerService.insert(Customer("A"))
         customerService.insert(Customer("B"))
         customerService.insert(Customer("C"))
@@ -73,6 +74,7 @@ class TemplateViewConfiguration {
 
 @Service
 @Transactional
+@Profile("exposed")
 class ExposedCustomerService(private val transactionTemplate: TransactionTemplate) : CustomerService, InitializingBean {
 
     override fun all(): Collection<Customer> = Customers.selectAll().map { Customer(it[Customers.name], it[Customers.id]) }
@@ -88,12 +90,11 @@ class ExposedCustomerService(private val transactionTemplate: TransactionTemplat
     }
 
     override fun byId(id: Long): Customer? = Customers.select { Customers.id.eq(id) }.map { Customer(it[Customers.name], it[Customers.id]) }.firstOrNull()
-
 }
 
-@Profile("jdbc")
 @Service
 @Transactional
+@Profile("jdbc")
 class JdbcCustomerService(private val jdbcOperations: JdbcOperations) : CustomerService {
 
     override fun all(): Collection<Customer> =
