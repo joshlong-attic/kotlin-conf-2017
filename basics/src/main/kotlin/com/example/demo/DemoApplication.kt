@@ -122,7 +122,6 @@ interface CustomerService {
     fun insert(c: Customer)
 
     fun byId(id: Long): Customer?
-
 }
 
 data class Customer(val name: String, var id: Long? = null)
