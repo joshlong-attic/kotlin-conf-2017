@@ -5,10 +5,9 @@ import org.jetbrains.exposed.sql.*
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.runApplication
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
+import org.springframework.boot.builder.SpringApplicationBuilder
 import org.springframework.context.annotation.Profile
+import org.springframework.context.support.beans
 import org.springframework.jdbc.core.JdbcOperations
 import org.springframework.jdbc.core.queryForObject
 import org.springframework.stereotype.Controller
@@ -19,11 +18,10 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.servlet.ModelAndView
 import org.springframework.web.servlet.view.script.ScriptTemplateConfigurer
 import org.springframework.web.servlet.view.script.ScriptTemplateViewResolver
-import javax.sql.DataSource
 
 @SpringBootApplication
 class DemoApplication {
-
+/*
     @Bean
     @Profile("exposed")
     fun platformTransactionManager(ds: DataSource) = SpringTransactionManager(ds)
@@ -35,11 +33,45 @@ class DemoApplication {
         customerService.insert(Customer("C"))
         customerService.insert(Customer("D"))
         customerService.all().forEach { println(it) }
-    }
+    }*/
 }
 
 fun main(args: Array<String>) {
-    runApplication<DemoApplication>(*args)
+    SpringApplicationBuilder().
+            sources(DemoApplication::class.java)
+            .initializers(beans {
+                bean {
+                    val customerService = ref<CustomerService>()
+                    ApplicationRunner {
+                        customerService.insert(Customer("A"))
+                        customerService.insert(Customer("B"))
+                        customerService.insert(Customer("C"))
+                        customerService.insert(Customer("D"))
+                        customerService.all().forEach { println(it) }
+                    }
+                }
+                bean {
+                    ScriptTemplateConfigurer().apply {
+                        this.setScripts("scripts/render.kts")
+                        this.engineName = "kotlin"
+                        this.renderFunction = "render"
+                        this.isSharedEngine = false
+                    }
+                }
+                bean {
+                    ScriptTemplateViewResolver().apply {
+                        this.setSuffix(".kts")
+                        this.setPrefix("templates/")
+                    }
+                }
+                profile("exposed") {
+                    bean {
+                        SpringTransactionManager(ref())
+                    }
+                }
+
+            })
+            .run(*args)
 }
 
 object Customers : Table() {
@@ -54,6 +86,7 @@ class CustomerController(private val customerService: CustomerService) {
     fun customers() = ModelAndView("customers", mapOf("customers" to this.customerService.all()))
 }
 
+/*
 @Configuration
 class TemplateViewConfiguration {
 
@@ -71,6 +104,7 @@ class TemplateViewConfiguration {
         this.isSharedEngine = false
     }
 }
+*/
 
 @Service
 @Transactional
